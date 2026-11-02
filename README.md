@@ -13,15 +13,31 @@ Requires Pi 1.5.0 or newer and Node.js 22.19 or newer.
 
 ## Install
 
+From npm:
+
+```sh
+pi install npm:@nikpushkarski/pi-agent-modes
+```
+
+Alternatively, install from the public [GitHub repository](https://github.com/nikpushkarski/pi-agent-modes):
+
+```sh
+pi install git:github.com/nikpushkarski/pi-agent-modes
+```
+
+Then start Pi in your project folder, or run `/reload` in an open session.
+
+### Local development
+
 From a local checkout:
 
 ```sh
 pi install /absolute/path/to/pi-agent-modes
 ```
 
-Quote the path if it contains spaces. Then start Pi in your project folder, or run `/reload` in an open session.
+Quote the path if it contains spaces. Pi loads a local checkout in place. You do not need to reinstall after editing it; use `/reload`.
 
-Pi loads a local checkout in place. You do not need to reinstall after editing it; use `/reload`.
+Install from only one source at a time. When switching from a local or GitHub install to npm, remove the previous source first to avoid loading the extension twice.
 
 ## Set up a project
 
@@ -137,28 +153,39 @@ For a manual check, use a temporary project folder. Skip setup and confirm the e
 
 ## Publish
 
-1. Upload this checkout to your own GitHub repository.
-2. Choose an available npm name. Update `package.json` with that name and your real repository, homepage, and issue links.
-3. Review the MIT license, run the tests, and inspect `npm pack --dry-run`.
-4. Publish with `npm publish --access public`. Tag the matching GitHub release.
-5. Keep the `pi-package` keyword. It makes an npm package eligible for the [Pi package gallery](https://pi.dev/packages). Listing and its timing are controlled by the gallery.
+Maintainer checklist for `@nikpushkarski/pi-agent-modes`:
 
-Users can then install from GitHub or npm:
+1. Update `package.json` and `CHANGELOG.md` for the release. Each published npm version must be unique.
+2. Run `npm run test:smoke` and `npm test`, then inspect `npm pack --dry-run` to confirm the package contents.
+3. Commit and push the release changes to [GitHub](https://github.com/nikpushkarski/pi-agent-modes), and confirm CI passes.
+4. Run `npm login` locally, then check that `npm whoami` reports `nikpushkarski`.
+5. Publish with `npm publish --access public`. Create a matching Git tag and GitHub release, such as `v0.2.1` for version `0.2.1`.
+6. Verify installation from npm in a clean Pi environment, including setup, mode switching, `/reload`, and `/agent-mode off`.
 
-```sh
-pi install git:github.com/YOUR_ACCOUNT/YOUR_REPO
-pi install npm:YOUR_PUBLISHED_PACKAGE_NAME
-```
+Keep the `pi-package` keyword. It makes the published npm package eligible for the [Pi package gallery](https://pi.dev/packages). Listing and its timing are controlled by the gallery.
 
-These are placeholders, not published releases. No publishing tokens or automatic release jobs are included.
+No publishing tokens or automatic release jobs are included.
 
 ## Remove
 
+Use the command matching your installation source:
+
 ```sh
+# npm
+pi remove npm:@nikpushkarski/pi-agent-modes
+
+# GitHub
+pi remove git:github.com/nikpushkarski/pi-agent-modes
+
+# Local checkout
 pi remove /absolute/path/to/pi-agent-modes
 ```
 
-Use the source you installed, then reload or restart Pi. Uninstalling leaves local settings in place. Use `/agent-mode off` before uninstalling if you want to remove this project's saved commands.
+Then reload or restart Pi. Uninstalling leaves local settings in place. Use `/agent-mode off` before uninstalling if you want to remove this project's saved commands.
+
+## Support
+
+Report bugs or request features in [GitHub Issues](https://github.com/nikpushkarski/pi-agent-modes/issues).
 
 ## License
 
