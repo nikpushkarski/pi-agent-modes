@@ -27,42 +27,24 @@ pi install git:github.com/nikpushkarski/pi-agent-modes
 
 Then start Pi in your project folder, or run `/reload` in an open session.
 
-### Local development
-
-From a local checkout:
-
-```sh
-pi install /absolute/path/to/pi-agent-modes
-```
-
-Quote the path if it contains spaces. Pi loads a local checkout in place. You do not need to reinstall after editing it; use `/reload`.
-
-Install from only one source at a time. When switching from a local or GitHub install to npm, remove the previous source first to avoid loading the extension twice.
+Install from only one source at a time. [Remove](#remove) the previous source before switching to avoid loading the extension twice.
 
 ## Set up a project
 
-On the first **interactive session in each project folder**, the extension offers setup. It cannot ask questions during `pi install`, or in print, JSON, or RPC mode.
-
-Setup explains both modes, then asks two questions:
+Start Pi from your project root. On the first **interactive session in that folder**, the extension explains both modes and asks:
 
 1. **What command runs your quick check?** For example, `npm run test:smoke`.
 2. **What command runs all your tests?** For example, `npm run test:full`.
 
-Use the commands your project actually has. Type `none` if a check does not exist. Review your answers, then choose whether to save them. Nothing runs during setup. Do not put passwords or tokens in a command.
+Use your project's actual commands, or type `none` if a check does not exist. Review and save your answers; nothing runs during setup. Do not include passwords or tokens.
 
-**You can say no or press Escape. Without saved settings, the extension does nothing:**
-
-- No mode rules are added to the agent's instructions.
-- No mode picker or footer label is shown.
-- `/agent-mode beast` and `--agent-mode beast` cannot bypass setup.
-
-Partial answers are thrown away. The extension only remembers that you skipped this folder, so it will not ask again on every launch. To try later, run:
+**Say no or press Escape to leave modes off:** no rules, picker, or footer label are added. Commands and flags cannot bypass setup. Partial answers are discarded, and the skipped folder is remembered. To try later, run:
 
 ```text
 /agent-mode setup
 ```
 
-Each folder has its own setup. Start Pi from the project root. Settings are not inherited by child folders or other projects.
+Settings belong to this folder; child folders and other projects do not inherit them.
 
 Pi must trust the project before modes can be set up or used. If needed, use `/trust`, then `/reload`. The extension does not grant trust for you.
 
@@ -91,9 +73,7 @@ Pi still adds regression tests when needed. It keeps searches and output short, 
 
 ### Beast
 
-A **Ralph loop** means inspect → implement → test → fix → repeat.
-
-Beast allows that loop for any request. It also allows any test, build, or full suite as many times as needed, without another request. There is no fixed subagent cap from this mode; real tool and runtime limits still apply.
+Beast allows **Ralph loops** (inspect → implement → test → fix → repeat) and any test or build as often as needed. It sets no fixed subagent cap; real tool and runtime limits still apply.
 
 For code changes, Pi should reach the goal and pass full validation on the final code before it claims completion. It must fix causes, not weaken tests to make them pass. Missing checks and blocked work must stay visible.
 
@@ -114,7 +94,7 @@ Print, JSON, and RPC sessions never open setup or picker dialogs. They stay off 
 
 The flag is reapplied when a session starts or reloads in that Pi process. It does not replace setup or project trust.
 
-If settings cannot be read, modes stay off and Pi shows a warning. Headless warnings use stderr, not the JSON output stream. An error does not stop Pi or guarantee a failed process exit.
+Unreadable settings leave modes off with a warning. In headless sessions, warnings go to stderr, not the JSON output stream. This does not guarantee a failed process exit.
 
 ## Where settings live
 
@@ -128,18 +108,24 @@ A custom Pi agent directory is supported. The file contains your two commands, o
 
 The extension does not edit `AGENTS.md`, create files in your project, or save credentials. Its selected rules replace conflicting project-level test and delegation defaults, but leave other project rules in place. Higher-priority instructions and approval limits still apply.
 
-Upgrading from 0.1.0 requires setup. An existing Beast Markdown file no longer turns the extension on. The old `--beast-file` option and manual overlay examples were removed; setup now supplies both modes.
-
 ## Develop
 
-No install or build step is needed for the source checkout:
+To load a local checkout:
+
+```sh
+pi install /absolute/path/to/pi-agent-modes
+```
+
+Quote paths containing spaces. Pi loads the checkout in place; use `/reload` after editing, not reinstall. Remove any npm or GitHub install first.
+
+No dependency install or build step is needed to run the tests:
 
 ```sh
 npm run test:smoke
 npm test
 ```
 
-Smoke checks cover setup, saving, mode changes, skipping, trust, headless startup, and turning off. The broader tests cover cancellation at every step, failed saves, bad settings, folder isolation, and session resets. Tests use temporary folders, not your real Pi settings. CI runs them on Linux and Windows.
+Tests cover setup, mode changes, persistence, trust, headless use, and failure handling. They use temporary folders, not your real Pi settings. CI runs on Linux and Windows.
 
 To also check the real Pi input renderer and same-process reload, point the smoke check at an installed Pi 1.5.0 package folder:
 
@@ -147,41 +133,19 @@ To also check the real Pi input renderer and same-process reload, point the smok
 npm run test:smoke -- --pi-root /path/to/node_modules/@earendil-works/pi-coding-agent
 ```
 
-This check uses temporary source copies and makes no model calls. It checks that the example stays visible while typing, then edits the copy and checks that Pi loads the new text without restarting. Runtime helpers use `.ts` files so Pi can reload them instead of reusing cached native JavaScript imports.
-
-For a manual check, use a temporary project folder. Skip setup and confirm the extension stays off. Run `/agent-mode setup`, save two commands, and try both modes. Reload to check that answers remain saved but the mode picker returns. Try `/agent-mode off` and confirm that no mode rules or footer label remain.
-
-## Publish
-
-Maintainer checklist for `@nikpushkarski/pi-agent-modes`:
-
-1. Update `package.json` and `CHANGELOG.md` for the release. Each published npm version must be unique.
-2. Run `npm run test:smoke` and `npm test`, then inspect `npm pack --dry-run` to confirm the package contents.
-3. Commit and push the release changes to [GitHub](https://github.com/nikpushkarski/pi-agent-modes), and confirm CI passes.
-4. Run `npm login` locally, then check that `npm whoami` reports `nikpushkarski`.
-5. Publish with `npm publish --access public`. Create a matching Git tag and GitHub release, such as `v0.2.1` for version `0.2.1`.
-6. Verify installation from npm in a clean Pi environment, including setup, mode switching, `/reload`, and `/agent-mode off`.
-
-Keep the `pi-package` keyword. It makes the published npm package eligible for the [Pi package gallery](https://pi.dev/packages). Listing and its timing are controlled by the gallery.
-
-No publishing tokens or automatic release jobs are included.
+This optional check uses temporary source copies and makes no model calls.
 
 ## Remove
 
-Use the command matching your installation source:
+For an npm install:
 
 ```sh
-# npm
 pi remove npm:@nikpushkarski/pi-agent-modes
-
-# GitHub
-pi remove git:github.com/nikpushkarski/pi-agent-modes
-
-# Local checkout
-pi remove /absolute/path/to/pi-agent-modes
 ```
 
-Then reload or restart Pi. Uninstalling leaves local settings in place. Use `/agent-mode off` before uninstalling if you want to remove this project's saved commands.
+For GitHub or local installs, run `pi list` and pass the listed source to `pi remove`. Add `--local` if you installed with that flag. Then reload or restart Pi.
+
+Uninstalling keeps saved mode settings. To delete this project's settings too, run `/agent-mode off` before uninstalling.
 
 ## Support
 
