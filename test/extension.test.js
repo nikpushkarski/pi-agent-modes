@@ -204,13 +204,21 @@ test("corrupt or unreadable settings leave the extension off without a silent re
 }, { configured: true }));
 
 test("save failure does not enable partial setup", () => withProject(async (p) => {
-  await writeFile(p.agentDir, "not a directory");
-  const app = p.app(answers);
+  // Initialize without auto-setup, then block writes only after the settings read.
+  // Reading through a file can return ENOENT on Windows but ENOTDIR on Linux.
+  const app = p.app({ ...answers, mode: "print" });
   await app.start();
+  assert.equal(app.dialogs.length, 0);
+  await writeFile(p.agentDir, "not a directory");
+  app.ctx.mode = "tui";
+  app.ctx.hasUI = true;
   await app.command("setup");
+  assert.equal(app.dialogs.filter(({ kind }) => kind === "input").length, 2);
+  assert.equal(app.dialogs.at(-1).title, "Save these settings?");
   assert.deepEqual(app.before(), {});
   assert.equal(app.selections.length, 0);
   assert.match(app.notifications.at(-1).text, /Could not save mode settings/);
+  assert.equal(await readFile(p.agentDir, "utf8"), "not a directory");
 }));
 
 test("project settings do not carry into another folder, and unrelated content does not alter them", () => withProject(async (p) => {
