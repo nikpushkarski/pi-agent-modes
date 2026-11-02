@@ -1,4 +1,4 @@
-name: Test
+name: Test and Release
 
 on:
   push:
@@ -22,3 +22,39 @@ jobs:
       # The package uses only Node built-ins and Pi's host-provided type import.
       - run: npm run test:smoke
       - run: npm test
+
+  release-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run test:release
+
+  release:
+    needs: [test, release-check]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'nikpushkarski/pi-agent-modes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: release-main
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

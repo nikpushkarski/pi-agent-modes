@@ -32,12 +32,31 @@ test("package is discoverable by Pi and explicitly ships its runtime without hos
 
 test("CI validates PRs and pushes with read-only permissions on Linux and Windows", async () => {
   const workflow = await read(".github/workflows/test.yml");
+  const checks = workflow.split("\n  release:\n")[0];
   assert.match(workflow, /\n  push:/);
   assert.match(workflow, /\n  pull_request:/);
-  assert.doesNotMatch(workflow, /pull_request_target|secrets\./);
-  assert.match(workflow, /contents: read/);
-  assert.match(workflow, /ubuntu-latest/);
-  assert.match(workflow, /windows-latest/);
-  assert.match(workflow, /run: npm run test:smoke/);
-  assert.match(workflow, /run: npm test/);
+  assert.doesNotMatch(workflow, /pull_request_target/);
+  assert.doesNotMatch(checks, /secrets\.|: write/);
+  assert.match(checks, /\npermissions:\n  contents: read\n/);
+  assert.match(checks, /ubuntu-latest/);
+  assert.match(checks, /windows-latest/);
+  assert.match(checks, /run: npm run test:smoke/);
+  assert.match(checks, /run: npm test/);
+  assert.match(checks, /run: npm run test:release/);
+});
+
+test("publishing is gated on all checks and restricted to main pushes in the upstream repo", async () => {
+  const workflow = await read(".github/workflows/test.yml");
+  const release = workflow.split("\n  release:\n")[1];
+  assert.ok(release, "A separate release job is required");
+  assert.match(release, /needs: \[test, release-check\]/);
+  assert.match(release, /if: github\.event_name == 'push' && github\.ref == 'refs\/heads\/main' && github\.repository == 'nikpushkarski\/pi-agent-modes'/);
+  assert.match(release, /group: release-main\n      cancel-in-progress: false/);
+  assert.match(release, /permissions:\n      contents: write\n      id-token: write/);
+  assert.doesNotMatch(release, /issues: write|pull-requests: write|NPM_TOKEN|NODE_AUTH_TOKEN/);
+  assert.match(release, /fetch-depth: 0/);
+  assert.match(release, /node-version: 24/);
+  assert.match(release, /run: npm ci --ignore-scripts/);
+  assert.match(release, /run: npm run release/);
+  assert.match(release, /GITHUB_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
 });
