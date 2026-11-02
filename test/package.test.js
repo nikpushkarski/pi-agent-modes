@@ -30,9 +30,11 @@ test("package is discoverable by Pi and explicitly ships its runtime without hos
   await access(new URL("LICENSE", root));
 });
 
-test("CI validates PRs and pushes with read-only permissions on Linux and Windows", async () => {
-  const workflow = await read(".github/workflows/test.yml");
-  const checks = workflow.split("\n  release:\n")[0];
+function assertWorkflowPermissions(source) {
+  // Git's Windows checkout may use CRLF; workflow semantics are unchanged.
+  const workflow = source.replace(/\r\n/g, "\n");
+  const [checks, release] = workflow.split("\n  release:\n");
+  assert.ok(release, "A separate release job is required");
   assert.match(workflow, /\n  push:/);
   assert.match(workflow, /\n  pull_request:/);
   assert.doesNotMatch(workflow, /pull_request_target/);
@@ -43,12 +45,7 @@ test("CI validates PRs and pushes with read-only permissions on Linux and Window
   assert.match(checks, /run: npm run test:smoke/);
   assert.match(checks, /run: npm test/);
   assert.match(checks, /run: npm run test:release/);
-});
 
-test("publishing is gated on all checks and restricted to main pushes in the upstream repo", async () => {
-  const workflow = await read(".github/workflows/test.yml");
-  const release = workflow.split("\n  release:\n")[1];
-  assert.ok(release, "A separate release job is required");
   assert.match(release, /needs: \[test, release-check\]/);
   assert.match(release, /if: github\.event_name == 'push' && github\.ref == 'refs\/heads\/main' && github\.repository == 'nikpushkarski\/pi-agent-modes'/);
   assert.match(release, /group: release-main\n      cancel-in-progress: false/);
@@ -59,4 +56,11 @@ test("publishing is gated on all checks and restricted to main pushes in the ups
   assert.match(release, /run: npm ci --ignore-scripts/);
   assert.match(release, /run: npm run release/);
   assert.match(release, /GITHUB_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
-});
+}
+
+for (const [format, newline] of [["LF", "\n"], ["CRLF", "\r\n"]]) {
+  test(`CI keeps checks read-only and gates publishing to upstream main pushes (${format})`, async () => {
+    const workflow = (await read(".github/workflows/test.yml")).replace(/\r?\n/g, newline);
+    assertWorkflowPermissions(workflow);
+  });
+}
