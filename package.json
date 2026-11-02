@@ -1,9 +1,17 @@
 {
-  "name": "pi-agent-modes",
+  "name": "@nikpushkarski/pi-agent-modes",
   "version": "0.2.1",
   "description": "Set up a low-usage Default mode and a Beast mode for longer work in each Pi project.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nikpushkarski/pi-agent-modes.git"
+  },
+  "homepage": "https://github.com/nikpushkarski/pi-agent-modes#readme",
+  "bugs": {
+    "url": "https://github.com/nikpushkarski/pi-agent-modes/issues"
+  },
   "keywords": ["pi-package", "pi-extension", "agent-modes", "ralph-loop"],
   "engines": { "node": ">=22.19.0" },
   "peerDependencies": { "@earendil-works/pi-coding-agent": "*" },
